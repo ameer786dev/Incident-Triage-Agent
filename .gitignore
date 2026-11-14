@@ -1,0 +1,19 @@
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+
+# Python environments, build outputs, and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Local editor and operating-system files
+.idea/
+.DS_Store
