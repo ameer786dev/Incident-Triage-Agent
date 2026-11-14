@@ -1,0 +1,101 @@
+x-lab: &lab
+  build: .
+  command: ["uvicorn", "triage_lab.simulator:app", "--host", "0.0.0.0", "--port", "8100"]
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: triage
+      POSTGRES_PASSWORD: triage
+      POSTGRES_DB: triage
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triage -d triage"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  inventory:
+    <<: *lab
+    environment:
+      SERVICE_NAME: inventory
+    ports: ["127.0.0.1:8103:8100"]
+
+  payments:
+    <<: *lab
+    environment:
+      SERVICE_NAME: payments
+    ports: ["127.0.0.1:8102:8100"]
+
+  checkout:
+    <<: *lab
+    environment:
+      SERVICE_NAME: checkout
+      PAYMENTS_URL: http://payments:8100
+      INVENTORY_URL: http://inventory:8100
+    ports: ["127.0.0.1:8101:8100"]
+    depends_on:
+      payments: {condition: service_healthy}
+      inventory: {condition: service_healthy}
+
+  gateway:
+    <<: *lab
+    environment:
+      SERVICE_NAME: gateway
+      CHECKOUT_URL: http://checkout:8100
+    ports: ["127.0.0.1:8100:8100"]
+    depends_on:
+      checkout: {condition: service_healthy}
+
+  mcp:
+    build: .
+    command: ["python", "-m", "triage_lab.mcp_server", "--transport", "streamable-http"]
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8001"
+      SERVICE_URLS: '{"gateway":"http://gateway:8100","checkout":"http://checkout:8100","payments":"http://payments:8100","inventory":"http://inventory:8100"}'
+    ports: ["127.0.0.1:8001:8001"]
+    depends_on:
+      gateway: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost',8001),3).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    # Optional env_file requires Docker Compose >=2.24.0.
+    # Preserve unset optional numeric settings (not empty-string overrides).
+    env_file:
+      - path: .env
+        required: false
+    command: ["sh", "-c", "python scripts/index_runbooks.py --backend pgvector && exec uvicorn triage_lab.api:app --host 0.0.0.0 --port 8000"]
+    environment:
+      MCP_URL: http://mcp:8001/mcp
+      DATABASE_URL: postgresql://triage:triage@postgres:5432/triage
+      TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-baseline}
+      RETRIEVAL_BACKEND: pgvector
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://host.docker.internal:11434/v1}
+      MODEL_NAME: ${MODEL_NAME:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      mcp: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

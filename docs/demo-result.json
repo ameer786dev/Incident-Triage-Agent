@@ -1,0 +1,186 @@
+{
+  "recording": {
+    "kind": "measured local baseline replay",
+    "fixture_file": "evals/development.jsonl",
+    "alert": {
+      "environment": "production",
+      "id": "development-000",
+      "service": "gateway",
+      "started_at": "2026-09-01T00:00:00Z",
+      "summary": "gateway: sustained elevated error ratio in the request path"
+    },
+    "playback": "presentation frames; not a wall-clock terminal recording"
+  },
+  "diagnosis": {
+    "incident_id": "development-000",
+    "root_cause": "bad_deploy",
+    "affected_service": "gateway",
+    "summary": "Current telemetry is consistent with bad deploy on gateway.",
+    "confidence": 0.85,
+    "evidence": [
+      {
+        "id": "metric:gateway",
+        "source": "get_metrics",
+        "service": "gateway",
+        "detail": "{\"cpu_utilization\": 0.137, \"db_latency_p95_ms\": 23.9, \"db_pool_utilization\": 0.208, \"dependency_error_rate\": 0.0029, \"disk_utilization\": 0.479, \"dns_error_rate\": 0.0, \"error_rate\": 0.552, \"latency_p95_ms\": 1260.4, \"memory_utilization\": 0.34, \"previous_error_rate\": 0.0085, \"rate_limited_requests\": 0, \"request_rate\": 89.4, \"restarts\": 0, \"service\": \"gateway\"}"
+      },
+      {
+        "id": "development-000:log:08",
+        "source": "search_logs",
+        "service": "gateway",
+        "detail": "{\"id\": \"development-000:log:08\", \"level\": \"ERROR\", \"message\": \"Release regression: handler raises ValueError on expected payload\", \"service\": \"gateway\", \"timestamp\": \"2026-08-31T23:59:45Z\"}"
+      },
+      {
+        "id": "development-000:deploy:gateway",
+        "source": "get_recent_deploys",
+        "service": "gateway",
+        "detail": "{\"changes\": \"Updated request serializer and response contract; newly built worker image\", \"id\": \"development-000:deploy:gateway\", \"service\": \"gateway\", \"status\": \"completed\", \"timestamp\": \"2026-08-31T23:56:00Z\", \"version\": \"2026.10.132\"}"
+      }
+    ],
+    "next_steps": [
+      "Open runbooks/gateway-bad_deploy.md and confirm its distinguishing checks.",
+      "Verify scope and approval with the on-call engineer before applying the runbook mitigation.",
+      "Watch error rate and p95 latency after any mitigation; revert if they worsen."
+    ],
+    "runbooks": [
+      {
+        "id": "gateway-bad_deploy",
+        "title": "gateway: Bad deploy and release regression",
+        "service": "gateway",
+        "cause": "bad_deploy",
+        "content": "# gateway: Bad deploy and release regression\n\nOwner: gateway on-call. Scope: public HTTP ingress and request routing. Primary impact: all storefront requests.\n\n## Symptoms\n\nError rate rises shortly after a new version becomes active. Exceptions repeat on the new revision while healthy older replicas serve the same request.\n\n## Distinguishing evidence\n\nCompare deploy timestamp, image revision, and canary versus baseline errors. Look for configuration validation errors, missing fields, TypeError, or changed request contracts. A recent deploy alone does not establish causality.\nInspect ingress error rate, route latency, upstream health, and active requests. This service must route /work requests to checkout while preserving trace IDs; inspect checkout as part of the dependency boundary.\n\n## Safe next steps\n\n1. Pause the rollout and compare errors by version before changing capacity.\n2. If the new revision alone fails, roll back the image and its compatible configuration to the last known good release.\n3. Check schema compatibility and feature flags before rollback; an irreversible migration requires the database owner.\n\nService-specific constraint: Gateway replicas are stateless; route and timeout configuration changes affect every request.\n\n## Verify recovery\n\nThe prior revision serves the same request successfully and error rate returns to baseline for two observation windows. Verify all storefront requests with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the release owner if both revisions fail, no baseline exists, or rollback would cross an incompatible schema change. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/gateway-bad_deploy.md",
+        "score": 1.35109927
+      },
+      {
+        "id": "gateway-dependency_timeout",
+        "title": "gateway: Dependency timeout and upstream request deadline",
+        "service": "gateway",
+        "cause": "dependency_timeout",
+        "content": "# gateway: Dependency timeout and upstream request deadline\n\nOwner: gateway on-call. Scope: public HTTP ingress and request routing. Primary impact: all storefront requests.\n\n## Symptoms\n\nDependency request duration increases and caller deadlines expire. The caller can have normal CPU, memory, and database latency while the downstream service is slow.\n\n## Distinguishing evidence\n\nFollow the request trace into the named dependency, compare caller and callee duration, and check circuit-breaker state. If the callee has a specific database, DNS, or memory failure, attribute that root cause instead.\nInspect ingress error rate, route latency, upstream health, and active requests. This service must route /work requests to checkout while preserving trace IDs; inspect checkout as part of the dependency boundary.\n\n## Safe next steps\n\n1. Inspect the named dependency and report the first failing hop with trace evidence.\n2. Enable an existing safe fallback or circuit breaker and reduce retry amplification.\n3. Use bounded retries only for idempotent operations; reconcile operations that may have completed after the deadline.\n\nService-specific constraint: Gateway replicas are stateless; route and timeout configuration changes affect every request.\n\n## Verify recovery\n\nThe dependency completes within budget, timeout rate returns to baseline, and in-flight requests drain. Verify all storefront requests with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the downstream owner with the trace ID and failing time window. Do not increase every timeout without checking the end-to-end deadline. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/gateway-dependency_timeout.md",
+        "score": 0.97499017
+      },
+      {
+        "id": "gateway-rate_limit",
+        "title": "gateway: Rate limit 429 and provider quota exhausted",
+        "service": "gateway",
+        "cause": "rate_limit",
+        "content": "# gateway: Rate limit 429 and provider quota exhausted\n\nOwner: gateway on-call. Scope: public HTTP ingress and request routing. Primary impact: all storefront requests.\n\n## Symptoms\n\nResponses include HTTP 429 or resource quota exceeded. Repeated retries can amplify request volume even when CPU, memory, and database latency are normal.\n\n## Distinguishing evidence\n\nRead Retry-After, quota headers, request rate, retry rate, and the identity or tenant being limited. Distinguish dependency quota from local ingress admission limits.\nInspect ingress error rate, route latency, upstream health, and active requests. This service must route /work requests to checkout while preserving trace IDs; inspect checkout as part of the dependency boundary.\n\n## Safe next steps\n\n1. Honor Retry-After and apply exponential backoff with jitter and a finite retry budget.\n2. Reduce duplicate traffic and queue only work that can safely wait.\n3. Coordinate a temporary quota increase with the provider after verifying the expected traffic source.\n\nService-specific constraint: Gateway replicas are stateless; route and timeout configuration changes affect every request.\n\n## Verify recovery\n\nThe limited identity remains below quota, 429 rate falls, and queued work drains without a new retry spike. Verify all storefront requests with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the dependency owner for sustained expected traffic. Never bypass tenant isolation or rotate credentials to evade a quota. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/gateway-rate_limit.md",
+        "score": 0.96364327
+      }
+    ],
+    "needs_human_review": false,
+    "limitations": [
+      "Synthetic lab telemetry; validate before applying changes",
+      "Untrained rule baseline; confidence is heuristic, not calibrated"
+    ],
+    "tool_trace": [
+      {
+        "tool": "search_logs",
+        "service": "gateway",
+        "elapsed_ms": 0.015,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "gateway",
+        "elapsed_ms": 0.007,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "gateway",
+        "elapsed_ms": 0.004,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "checkout",
+        "elapsed_ms": 0.004,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "checkout",
+        "elapsed_ms": 0.003,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "checkout",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "payments",
+        "elapsed_ms": 0.003,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "payments",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "payments",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "inventory",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "inventory",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "inventory",
+        "elapsed_ms": 0.002,
+        "status": "ok",
+        "error": null
+      }
+    ],
+    "usage": {
+      "provider": "baseline",
+      "model": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "cost_scope": "Token charges only; excludes local compute and infrastructure"
+    },
+    "elapsed_ms": 7.773,
+    "retrieval": {
+      "mode": "hybrid_rerank",
+      "backend": "memory",
+      "embedding_provider": "local",
+      "embedding_model": "local-domain-hash-v1-256",
+      "embedding_dimensions": 256,
+      "reranker_provider": "local",
+      "reranker_model": "local-token-title-service-v1",
+      "runbook_count": 40,
+      "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+    }
+  }
+}

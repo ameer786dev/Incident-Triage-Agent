@@ -1,0 +1,30 @@
+{
+  "checked_at_utc": "2026-11-01T21:56:08.958727+00:00",
+  "passed": true,
+  "commands": [
+    ".venv/bin/python scripts/local_lab.py",
+    ".venv/bin/python scripts/smoke_lab.py --output artifacts/live-smoke.json"
+  ],
+  "flow": "HTTP API -> Streamable HTTP MCP -> live service HTTP",
+  "observed_gateway_status_codes": [
+    502,
+    502,
+    502,
+    502
+  ],
+  "root_cause": "oom",
+  "affected_service": "payments",
+  "evidence_count": 3,
+  "successful_tool_calls": 12,
+  "api_diagnosis_elapsed_ms": 75.506,
+  "http_wall_time_ms": 77.75,
+  "provider": "baseline",
+  "estimated_token_cost_usd": 0.0,
+  "all_six_processes_shutdown_cleanly": true,
+  "logged_tracebacks": 0,
+  "limitations": [
+    "One live synthetic fault smoke test; not an accuracy benchmark",
+    "Resource exhaustion is safely simulated",
+    "Local retrieval uses memory; Docker/pgvector not exercised"
+  ]
+}

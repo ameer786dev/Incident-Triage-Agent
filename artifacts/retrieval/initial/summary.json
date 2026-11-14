@@ -1,0 +1,90 @@
+{
+  "dataset": "evals/incidents.jsonl",
+  "dataset_sha256": "65ecd627c2085fe019a7377d48b2f5045c6e82d8b226c4446772e8a936d3d36a",
+  "total_cases": 180,
+  "excluded_unknown": 20,
+  "scope": "Retrieval-only, snapshot public-query reconstruction, no service hint; no diagnosis or MCP timing",
+  "tuned_on_this_run": false,
+  "results": [
+    {
+      "mode": "bm25",
+      "n": 160,
+      "top_1": 0.06875,
+      "hit_at_3": 0.24375,
+      "mrr_at_3": 0.14791666666666667,
+      "search_p50_ms": 0.5375624969019555,
+      "search_p95_ms": 0.6506478901428635,
+      "retrieval": {
+        "mode": "bm25",
+        "backend": "memory",
+        "embedding_provider": "local",
+        "embedding_model": "local-domain-hash-v1-256",
+        "embedding_dimensions": 256,
+        "reranker_provider": "local",
+        "reranker_model": "local-token-title-service-v1",
+        "runbook_count": 40,
+        "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+      }
+    },
+    {
+      "mode": "dense",
+      "n": 160,
+      "top_1": 0.31875,
+      "hit_at_3": 0.425,
+      "mrr_at_3": 0.3614583333333333,
+      "search_p50_ms": 0.6472710010712035,
+      "search_p95_ms": 0.7788253038597759,
+      "retrieval": {
+        "mode": "dense",
+        "backend": "memory",
+        "embedding_provider": "local",
+        "embedding_model": "local-domain-hash-v1-256",
+        "embedding_dimensions": 256,
+        "reranker_provider": "local",
+        "reranker_model": "local-token-title-service-v1",
+        "runbook_count": 40,
+        "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+      }
+    },
+    {
+      "mode": "hybrid",
+      "n": 160,
+      "top_1": 0.125,
+      "hit_at_3": 0.4,
+      "mrr_at_3": 0.24895833333333334,
+      "search_p50_ms": 0.651938004011754,
+      "search_p95_ms": 0.7813687610905617,
+      "retrieval": {
+        "mode": "hybrid",
+        "backend": "memory",
+        "embedding_provider": "local",
+        "embedding_model": "local-domain-hash-v1-256",
+        "embedding_dimensions": 256,
+        "reranker_provider": "local",
+        "reranker_model": "local-token-title-service-v1",
+        "runbook_count": 40,
+        "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+      }
+    },
+    {
+      "mode": "hybrid_rerank",
+      "n": 160,
+      "top_1": 0.53125,
+      "hit_at_3": 0.7125,
+      "mrr_at_3": 0.615625,
+      "search_p50_ms": 1.8655625026440248,
+      "search_p95_ms": 2.1114627925271634,
+      "retrieval": {
+        "mode": "hybrid_rerank",
+        "backend": "memory",
+        "embedding_provider": "local",
+        "embedding_model": "local-domain-hash-v1-256",
+        "embedding_dimensions": 256,
+        "reranker_provider": "local",
+        "reranker_model": "local-token-title-service-v1",
+        "runbook_count": 40,
+        "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+      }
+    }
+  ]
+}

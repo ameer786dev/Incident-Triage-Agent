@@ -1,0 +1,17 @@
+{
+  "actions_url": "https://github.com/ameer786dev/incident-triage-agent/actions",
+  "run_url": "https://github.com/ameer786dev/incident-triage-agent/actions/runs/41355475752",
+  "tested_commit": "97e288f3cc2b7b962a27eee328b8ef6813311b1f",
+  "conclusion": "success",
+  "completed_at_utc": "2026-11-01T22:08:22Z",
+  "native_pgvector_tests": {"passed": 68, "skipped": 0, "seconds": 3.48},
+  "docker_compose_build_and_smoke": "passed",
+  "evaluation_summary": "eval-summary.json",
+  "docker_smoke_evidence": "docker-smoke.json",
+  "notes": [
+    "CI ran native PostgreSQL with the pgvector extension, including SQL/memory ranking parity",
+    "Docker smoke exercised API -> HTTP MCP -> four live HTTP services with pgvector retrieval",
+    "CI diagnosis evaluation used stdio snapshots and in-memory retrieval, as recorded in its summary",
+    "No hosted model was invoked"
+  ]
+}

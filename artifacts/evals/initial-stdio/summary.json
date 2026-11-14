@@ -1,0 +1,111 @@
+{
+  "started_from_frozen_corpus": true,
+  "completed_at_utc": "2026-11-01T21:57:15.359403+00:00",
+  "dataset": "evals/incidents.jsonl",
+  "dataset_sha256": "65ecd627c2085fe019a7377d48b2f5045c6e82d8b226c4446772e8a936d3d36a",
+  "source_sha256": "b0d159fa78f48fe742f71ac214f6dcbc38388b264a252a3aa7d727653c3deac7",
+  "runbooks_sha256": "c5ffe278ce2d22b3b86ee9a3e63ab0d7e4c7e788e95e51a9306a566e2fe2233c",
+  "transport": "stdio",
+  "provider": "baseline",
+  "model": null,
+  "retrieval": {
+    "mode": "hybrid_rerank",
+    "backend": "memory",
+    "embedding_provider": "local",
+    "embedding_model": "local-domain-hash-v1-256",
+    "embedding_dimensions": 256,
+    "reranker_provider": "local",
+    "reranker_model": "local-token-title-service-v1",
+    "runbook_count": 40,
+    "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+  },
+  "runtime": {
+    "python": "3.12.12",
+    "platform": "macOS-26.7.1-arm64-arm-64bit",
+    "langgraph": "1.2.19",
+    "mcp": "1.30.0"
+  },
+  "measurement_scope": "Warm process, serial cases, full graph/tool/retrieval/model latency; excludes startup and indexing",
+  "cost_scope": "Token charges only; excludes local compute, infrastructure, and subscription costs",
+  "limitations": [
+    "Synthetic templated incidents, not production incidents",
+    "Citation ID validity does not establish natural-language claim entailment",
+    "Baseline is an untrained rule system; local embedding/reranker are nonlearned",
+    "No confidence calibration or human remediation-quality review"
+  ],
+  "metrics": {
+    "n": 180,
+    "root_cause_correct": 153,
+    "root_cause_accuracy": 0.85,
+    "cause_and_service_accuracy": 0.85,
+    "service_accuracy": 0.9444444444444444,
+    "runbook_hit_at_3": 0.7125,
+    "runbook_denominator": 160,
+    "citation_id_validity": 1.0,
+    "citation_count": 353,
+    "required_sources_covered_rate": 0.8444444444444444,
+    "abstention_precision": 0.3870967741935484,
+    "abstention_recall": 0.6,
+    "abstention_counts": {
+      "true_positive": 12,
+      "expected": 20,
+      "predicted": 31
+    },
+    "latency_ms": {
+      "p50": 11.11,
+      "p95": 13.86,
+      "mean": 11.538
+    },
+    "mean_estimated_token_cost_usd": 0.0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "tool_calls": 2160,
+    "tool_errors": 0,
+    "by_cause": {
+      "bad_deploy": {
+        "n": 16,
+        "correct": 12
+      },
+      "db_timeout": {
+        "n": 16,
+        "correct": 16
+      },
+      "oom": {
+        "n": 16,
+        "correct": 16
+      },
+      "cpu_saturation": {
+        "n": 16,
+        "correct": 16
+      },
+      "connection_pool": {
+        "n": 16,
+        "correct": 16
+      },
+      "dns_failure": {
+        "n": 16,
+        "correct": 16
+      },
+      "rate_limit": {
+        "n": 16,
+        "correct": 16
+      },
+      "dependency_timeout": {
+        "n": 16,
+        "correct": 8
+      },
+      "disk_full": {
+        "n": 16,
+        "correct": 16
+      },
+      "healthy": {
+        "n": 16,
+        "correct": 9
+      },
+      "unknown": {
+        "n": 20,
+        "correct": 12
+      }
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "complete": true,
+  "target_n": 180,
+  "completed_n": 180,
+  "stop_reason": null,
+  "model_failure": null,
+  "not_before_utc": null,
+  "included_frozen_test_corpus": true,
+  "completed_at_utc": "2026-11-14T01:24:07.928046+00:00",
+  "updated_at_utc": "2026-11-14T01:24:07.928106+00:00",
+  "dataset": "evals/incidents.jsonl",
+  "dataset_sha256": "65ecd627c2085fe019a7377d48b2f5045c6e82d8b226c4446772e8a936d3d36a",
+  "source_sha256": "93d3faa864ef3c00ffc523dba92ddd896e4135091d5af3f6a4c82df107407e99",
+  "runbooks_sha256": "c5ffe278ce2d22b3b86ee9a3e63ab0d7e4c7e788e95e51a9306a566e2fe2233c",
+  "transport": "stdio",
+  "provider": "compatible",
+  "model": "gpt-5.4-mini",
+  "retrieval": {
+    "mode": "hybrid_rerank",
+    "backend": "memory",
+    "embedding_provider": "local",
+    "embedding_model": "local-domain-hash-v1-256",
+    "embedding_dimensions": 256,
+    "reranker_provider": "local",
+    "reranker_model": "local-token-title-service-v1",
+    "runbook_count": 40,
+    "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+  },
+  "runtime": {
+    "python": "3.12.16",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "langgraph": "1.2.19",
+    "mcp": "1.30.0"
+  },
+  "measurement_scope": "Warm process, serial cases, full graph/tool/retrieval/model latency; excludes startup and indexing",
+  "cost_scope": "Token charges only; excludes local compute, infrastructure, and subscription costs",
+  "execution": {
+    "invocation_wall_seconds": 1793.757,
+    "scheduled_wait_seconds": 1331.474,
+    "min_interval_seconds": 10.0,
+    "max_attempts_per_case_per_invocation": 3,
+    "wait_scope": "Pacing and retry waits occur outside diagnosis latency"
+  },
+  "attempt_accounting": {
+    "attempts": 180,
+    "request_failures": 0,
+    "recorded_input_tokens": 644922,
+    "recorded_output_tokens": 48144,
+    "recorded_estimated_token_cost_usd": 0.7003395,
+    "cost_records_missing": 0,
+    "all_attempt_costs_available": true,
+    "scope": "Recorded usage only; failed requests may have unavailable usage. Check provider billing for charges."
+  },
+  "limitations": [
+    "Synthetic templated incidents, not production incidents",
+    "Citation ID validity does not establish natural-language claim entailment",
+    "Baseline is an untrained rule system; local embedding/reranker are nonlearned",
+    "No confidence calibration or human remediation-quality review"
+  ],
+  "metrics": {
+    "n": 180,
+    "root_cause_correct": 158,
+    "root_cause_accuracy": 0.8777777777777778,
+    "cause_and_service_accuracy": 0.8722222222222222,
+    "service_accuracy": 0.9777777777777777,
+    "runbook_hit_at_3": 0.7125,
+    "runbook_denominator": 160,
+    "citation_id_validity": 1.0,
+    "citation_count": 1221,
+    "required_sources_covered_rate": 0.9611111111111111,
+    "abstention_precision": 0.65,
+    "abstention_recall": 0.65,
+    "abstention_counts": {
+      "true_positive": 13,
+      "expected": 20,
+      "predicted": 20
+    },
+    "latency_ms": {
+      "p50": 2495.845,
+      "p95": 3027.996,
+      "mean": 2540.762
+    },
+    "mean_estimated_token_cost_usd": 0.003890775,
+    "total_input_tokens": 644922,
+    "total_output_tokens": 48144,
+    "tool_calls": 2160,
+    "tool_errors": 0,
+    "by_cause": {
+      "bad_deploy": {
+        "n": 16,
+        "correct": 15
+      },
+      "db_timeout": {
+        "n": 16,
+        "correct": 8
+      },
+      "oom": {
+        "n": 16,
+        "correct": 16
+      },
+      "cpu_saturation": {
+        "n": 16,
+        "correct": 16
+      },
+      "connection_pool": {
+        "n": 16,
+        "correct": 16
+      },
+      "dns_failure": {
+        "n": 16,
+        "correct": 16
+      },
+      "rate_limit": {
+        "n": 16,
+        "correct": 16
+      },
+      "dependency_timeout": {
+        "n": 16,
+        "correct": 16
+      },
+      "disk_full": {
+        "n": 16,
+        "correct": 16
+      },
+      "healthy": {
+        "n": 16,
+        "correct": 10
+      },
+      "unknown": {
+        "n": 20,
+        "correct": 13
+      }
+    },
+    "provider_request_failures": 0
+  }
+}

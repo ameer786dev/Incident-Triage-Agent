@@ -1,0 +1,183 @@
+{
+  "passed": true,
+  "transport": "HTTP API -> Streamable HTTP MCP -> live service HTTP",
+  "gateway_status_codes": [
+    502,
+    502,
+    502,
+    502
+  ],
+  "wall_time_ms": 418.35,
+  "diagnosis": {
+    "incident_id": "live-payments-oom",
+    "root_cause": "oom",
+    "affected_service": "payments",
+    "summary": "Current telemetry is consistent with oom on payments.",
+    "confidence": 0.85,
+    "evidence": [
+      {
+        "id": "metric:payments",
+        "source": "get_metrics",
+        "service": "payments",
+        "detail": "{\"cpu_utilization\": 0.21, \"db_latency_p95_ms\": 8.0, \"db_pool_utilization\": 0.22, \"dependency_error_rate\": 0.0, \"dependency_latency_ms\": 15.0, \"disk_utilization\": 0.38, \"dns_error_rate\": 0.0, \"error_rate\": 1.0, \"id\": \"metric:payments\", \"latency_p95_ms\": 0.01, \"memory_utilization\": 0.995, \"rate_limited_requests\": 0, \"request_count\": 4, \"request_rate\": 4.0, \"restarts\": 4, \"service\": \"payments\", \"timestamp\": \"2026-11-01T22:08:17.384050+00:00\"}"
+      },
+      {
+        "id": "log-258a8964ac1b",
+        "source": "search_logs",
+        "service": "payments",
+        "detail": "{\"id\": \"log-258a8964ac1b\", \"level\": \"ERROR\", \"message\": \"OOMKilled: container exceeded memory limit; exit code 137\", \"service\": \"payments\", \"status_code\": 503, \"timestamp\": \"2026-11-01T22:08:17.138293+00:00\", \"version\": \"1.0.0\"}"
+      },
+      {
+        "id": "log-473a75350c4a",
+        "source": "search_logs",
+        "service": "payments",
+        "detail": "{\"id\": \"log-473a75350c4a\", \"level\": \"ERROR\", \"message\": \"OOMKilled: container exceeded memory limit; exit code 137\", \"service\": \"payments\", \"status_code\": 503, \"timestamp\": \"2026-11-01T22:08:17.161001+00:00\", \"version\": \"1.0.0\"}"
+      }
+    ],
+    "next_steps": [
+      "Open runbooks/payments-oom.md and confirm its distinguishing checks.",
+      "Verify scope and approval with the on-call engineer before applying the runbook mitigation.",
+      "Watch error rate and p95 latency after any mitigation; revert if they worsen."
+    ],
+    "runbooks": [
+      {
+        "id": "gateway-oom",
+        "title": "gateway: Out of memory OOMKilled and heap exhaustion",
+        "service": "gateway",
+        "cause": "oom",
+        "content": "# gateway: Out of memory OOMKilled and heap exhaustion\n\nOwner: gateway on-call. Scope: public HTTP ingress and request routing. Primary impact: all storefront requests.\n\n## Symptoms\n\nResident memory approaches its container limit, processes restart, and logs or container events report OOMKilled, allocation failure, or exit code 137.\n\n## Distinguishing evidence\n\nCompare memory RSS with the configured memory limit and restart count. Verify exit reason; exit 137 without memory pressure can have other causes. Inspect heap growth, request size, and cache cardinality.\nInspect ingress error rate, route latency, upstream health, and active requests. This service must route /work requests to checkout while preserving trace IDs; inspect checkout as part of the dependency boundary.\n\n## Safe next steps\n\n1. Shed oversized or nonessential requests and capture a bounded memory profile from a healthy replica.\n2. Restore capacity with a known healthy replica or roll back a revision with confirmed increasing memory use.\n3. Increase memory only after checking node headroom and setting an expiry for the temporary change.\n\nService-specific constraint: Gateway replicas are stateless; route and timeout configuration changes affect every request.\n\n## Verify recovery\n\nRSS stays below the limit with stable headroom, restart count stops growing, and representative requests succeed. Verify all storefront requests with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the service owner if memory grows monotonically or no safe replica has enough headroom; repeated restarts do not repair a leak. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/gateway-oom.md",
+        "score": 1.46232152
+      },
+      {
+        "id": "checkout-oom",
+        "title": "checkout: Out of memory OOMKilled and heap exhaustion",
+        "service": "checkout",
+        "cause": "oom",
+        "content": "# checkout: Out of memory OOMKilled and heap exhaustion\n\nOwner: checkout on-call. Scope: order orchestration. Primary impact: order placement and cart conversion.\n\n## Symptoms\n\nResident memory approaches its container limit, processes restart, and logs or container events report OOMKilled, allocation failure, or exit code 137.\n\n## Distinguishing evidence\n\nCompare memory RSS with the configured memory limit and restart count. Verify exit reason; exit 137 without memory pressure can have other causes. Inspect heap growth, request size, and cache cardinality.\nInspect order failures, dependency duration, pending reservations, and duplicate authorizations. This service must reserve stock and authorize payment before accepting an order; inspect payments and inventory as part of the dependency boundary.\n\n## Safe next steps\n\n1. Shed oversized or nonessential requests and capture a bounded memory profile from a healthy replica.\n2. Restore capacity with a known healthy replica or roll back a revision with confirmed increasing memory use.\n3. Increase memory only after checking node headroom and setting an expiry for the temporary change.\n\nService-specific constraint: An order can have a payment authorization even when the caller sees a timeout. Inspect its idempotency key before replay.\n\n## Verify recovery\n\nRSS stays below the limit with stable headroom, restart count stops growing, and representative requests succeed. Verify order placement and cart conversion with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the service owner if memory grows monotonically or no safe replica has enough headroom; repeated restarts do not repair a leak. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/checkout-oom.md",
+        "score": 1.43308765
+      },
+      {
+        "id": "payments-oom",
+        "title": "payments: Out of memory OOMKilled and heap exhaustion",
+        "service": "payments",
+        "cause": "oom",
+        "content": "# payments: Out of memory OOMKilled and heap exhaustion\n\nOwner: payments on-call. Scope: payment authorization. Primary impact: card authorizations and order completion.\n\n## Symptoms\n\nResident memory approaches its container limit, processes restart, and logs or container events report OOMKilled, allocation failure, or exit code 137.\n\n## Distinguishing evidence\n\nCompare memory RSS with the configured memory limit and restart count. Verify exit reason; exit 137 without memory pressure can have other causes. Inspect heap growth, request size, and cache cardinality.\nInspect authorization success, provider latency, ledger query time, and retry count. This service must authorize charges using a stable idempotency key; inspect payment provider and payment ledger as part of the dependency boundary.\n\n## Safe next steps\n\n1. Shed oversized or nonessential requests and capture a bounded memory profile from a healthy replica.\n2. Restore capacity with a known healthy replica or roll back a revision with confirmed increasing memory use.\n3. Increase memory only after checking node headroom and setting an expiry for the temporary change.\n\nService-specific constraint: Never blindly retry a charge. Reconcile the provider authorization ID and ledger entry first.\n\n## Verify recovery\n\nRSS stays below the limit with stable headroom, restart count stops growing, and representative requests succeed. Verify card authorizations and order completion with the service dashboard and one bounded representative request. Retain log IDs, metric timestamps, deploy revision, and trace IDs in the incident record.\n\n## Rollback and escalation\n\nEscalate to the service owner if memory grows monotonically or no safe replica has enough headroom; repeated restarts do not repair a leak. A mitigation needs an owner, a scope, a success check, and a rollback condition. Diagnostic evidence supports a recommendation; this runbook does not authorize autonomous production changes.",
+        "path": "runbooks/payments-oom.md",
+        "score": 1.42485919
+      }
+    ],
+    "needs_human_review": false,
+    "limitations": [
+      "Synthetic lab telemetry; validate before applying changes",
+      "Untrained rule baseline; confidence is heuristic, not calibrated"
+    ],
+    "tool_trace": [
+      {
+        "tool": "search_logs",
+        "service": "gateway",
+        "elapsed_ms": 180.713,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "checkout",
+        "elapsed_ms": 200.968,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "gateway",
+        "elapsed_ms": 207.896,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "gateway",
+        "elapsed_ms": 210.25,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "checkout",
+        "elapsed_ms": 211.033,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "checkout",
+        "elapsed_ms": 211.747,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "payments",
+        "elapsed_ms": 212.462,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "payments",
+        "elapsed_ms": 213.25,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "payments",
+        "elapsed_ms": 214.144,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "search_logs",
+        "service": "inventory",
+        "elapsed_ms": 214.814,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_recent_deploys",
+        "service": "inventory",
+        "elapsed_ms": 215.553,
+        "status": "ok",
+        "error": null
+      },
+      {
+        "tool": "get_metrics",
+        "service": "inventory",
+        "elapsed_ms": 216.418,
+        "status": "ok",
+        "error": null
+      }
+    ],
+    "usage": {
+      "provider": "baseline",
+      "model": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "cost_scope": "Token charges only; excludes local compute and infrastructure"
+    },
+    "elapsed_ms": 414.447,
+    "retrieval": {
+      "mode": "hybrid_rerank",
+      "backend": "pgvector",
+      "embedding_provider": "local",
+      "embedding_model": "local-domain-hash-v1-256",
+      "embedding_dimensions": 256,
+      "reranker_provider": "local",
+      "reranker_model": "local-token-title-service-v1",
+      "runbook_count": 40,
+      "corpus_sha256": "001722bbd1b4ae86cfb213616c72384c03c8a0fcc5d5a72ce0cf616b412d8b99"
+    }
+  }
+}
